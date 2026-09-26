@@ -1,7 +1,7 @@
 import { getStats } from "@/lib/sih";
 
 export const dynamic = "force-static";
-export const revalidate = 21600; // 6h, Hobby-safe
+export const revalidate = 1800; // 30min
 
 export async function GET() {
   try {

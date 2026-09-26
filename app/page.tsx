@@ -1,7 +1,7 @@
 import { getStats } from "@/lib/sih";
 import SearchTable from "./components/SearchTable";
 
-export const revalidate = 21600; // 6h ISR, Hobby-safe
+export const revalidate = 1800; // 30min ISR
 
 export const metadata = {
   title: "SIH 2026 Live Count",
@@ -22,7 +22,7 @@ export default async function Home() {
   }
   return (
     <main className="mx-auto max-w-4xl px-6 py-10 font-sans">
-      <p className="text-sm text-zinc-500">Source: sih.gov.in/sih2026PS · refreshes every ~6h</p>
+      <p className="text-sm text-zinc-500">Source: sih.gov.in/sih2026PS · refreshes every ~30 min</p>
       <h1 className="mt-1 text-3xl font-bold">SIH 2026 Live Count</h1>
 
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
