@@ -1,4 +1,5 @@
-import { getStats } from "@/lib/sih";
+import psData from "@/data/ps.json";
+import { getLiveCounts, type PSDetail } from "@/lib/sih";
 import SearchTable from "./components/SearchTable";
 
 export const revalidate = 1800; // 30min ISR
@@ -9,17 +10,33 @@ export const metadata = {
 };
 
 export default async function Home() {
-  let stats;
+  // Static details come from the repo snapshot; only live counts hit SIH.
+  const staticRows = psData.rows as PSDetail[];
+  let rows = [...staticRows].sort((a, b) => b.count - a.count);
+  let updatedAt: string = psData.fetchedAt;
+  let live = false;
   try {
-    stats = await getStats();
+    const lc = await getLiveCounts();
+    rows = staticRows
+      .map((r) => ({
+        ...r,
+        count: lc.counts[r.id]?.count ?? r.count,
+        cap: lc.counts[r.id]?.cap ?? r.cap,
+      }))
+      .sort((a, b) => b.count - a.count);
+    updatedAt = lc.updatedAt;
+    live = true;
   } catch {
-    return (
-      <main className="mx-auto max-w-3xl px-6 py-16">
-        <h1 className="text-3xl font-bold">SIH 2026 Live Count</h1>
-        <p className="mt-4 text-red-600">Could not reach sih.gov.in right now. Try again later.</p>
-      </main>
-    );
+    // SIH unreachable: render repo snapshot.
   }
+  const totalIdeas = rows.reduce((a, r) => a + r.count, 0);
+  const totalCapacity = rows.reduce((a, r) => a + r.cap, 0);
+  const stats = {
+    totalApplicants: totalIdeas * 6,
+    totalIdeas,
+    psCount: rows.length,
+    totalCapacity,
+  };
   return (
     <main className="mx-auto max-w-4xl px-6 py-10 font-sans">
       <p className="text-sm text-zinc-500">Source: sih.gov.in/sih2026PS · refreshes every ~30 min</p>
@@ -40,11 +57,12 @@ export default async function Home() {
       </div>
       <p className="mt-2 text-xs text-zinc-500">
         *Applicants ≈ teams × 6 (SIH teams have exactly 6 members). Updated:{" "}
-        {new Date(stats.updatedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })} IST
+        {new Date(updatedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })} IST
+        {live ? "" : " (repo snapshot — SIH unreachable)"}
       </p>
 
       <div className="mt-8">
-        <SearchTable rows={stats.rows} />
+        <SearchTable rows={rows} />
       </div>
 
       <footer className="mt-10 text-xs text-zinc-500">

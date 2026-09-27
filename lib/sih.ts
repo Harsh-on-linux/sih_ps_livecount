@@ -12,6 +12,24 @@ export type PSRow = {
   theme: string;
 };
 
+// Static PS detail snapshot (data/ps.json, committed to repo). Counts here are
+// a snapshot; live counts overlay at runtime via /api/counts.
+export type PSDetail = PSRow & {
+  sno: string;
+  deadline: string;
+  descriptionHtml: string;
+  description: string;
+  youtube: string;
+  dataset: string;
+  datasetLinks: string[];
+  contact: string;
+};
+
+export type LiveCounts = {
+  updatedAt: string;
+  counts: Record<string, { count: number; cap: number }>;
+};
+
 export type Stats = {
   totalIdeas: number;
   totalCapacity: number;
@@ -88,6 +106,33 @@ async function fetchStats(): Promise<Stats> {
 
 // 30min cache. ponytail: no DB, cache is the DB.
 export const getStats = unstable_cache(fetchStats, ["sih-stats"], {
+  tags: ["sih"],
+  revalidate: 1800,
+});
+
+// Live-only fetch: id -> count/cap. Small payload, used to overlay fresh
+// numbers on top of the static repo snapshot (data/ps.json).
+async function fetchLiveCounts(): Promise<LiveCounts> {
+  const html = await fetchSource();
+  const $ = cheerio.load(html);
+  const table = $("th")
+    .filter((_, el) => $(el).text().includes("Submitted Idea"))
+    .closest("table")
+    .first();
+  const counts: LiveCounts["counts"] = {};
+  table.find("> tbody > tr").each((_, tr) => {
+    const tds = $(tr).children("td");
+    if (tds.length < 6) return;
+    const id = $(tds[4]).text().trim();
+    const m = $(tds[5]).text().trim().match(/(\d+)\s*\/\s*(\d+)/);
+    if (!/^SIH26\d+$/.test(id) || !m) return;
+    counts[id] = { count: +m[1], cap: +m[2] };
+  });
+  if (!Object.keys(counts).length) throw new Error("SIH counts parse returned 0 rows");
+  return { updatedAt: new Date().toISOString(), counts };
+}
+
+export const getLiveCounts = unstable_cache(fetchLiveCounts, ["sih-counts"], {
   tags: ["sih"],
   revalidate: 1800,
 });

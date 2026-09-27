@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "fetch-ps": "node scripts/fetch-ps.mjs"
   },
   "dependencies": {
     "cheerio": "^1.2.0",

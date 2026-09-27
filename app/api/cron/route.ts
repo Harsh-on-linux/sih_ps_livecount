@@ -14,5 +14,6 @@ export async function GET(req: Request) {
   revalidateTag("sih", "max");
   revalidatePath("/", "page");
   revalidatePath("/api/stats");
+  revalidatePath("/api/counts");
   return Response.json({ revalidated: true, at: new Date().toISOString() });
 }

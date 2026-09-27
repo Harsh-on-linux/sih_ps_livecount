@@ -92,9 +92,7 @@ export default function SearchTable({ rows }: { rows: PSRow[] }) {
               <tr key={r.id} className="border-t border-zinc-200 dark:border-zinc-800">
                 <td className="px-3 py-2 font-mono">
                   <a
-                    href="https://sih.gov.in/sih2026PS"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href={`/ps/${r.id}`}
                     className="underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-600"
                   >
                     {r.id}
@@ -102,9 +100,7 @@ export default function SearchTable({ rows }: { rows: PSRow[] }) {
                 </td>
                 <td className="px-3 py-2">
                   <a
-                    href="https://sih.gov.in/sih2026PS"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href={`/ps/${r.id}`}
                     className="font-medium hover:underline"
                   >
                     {r.title}
