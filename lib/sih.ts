@@ -91,3 +91,18 @@ export const getStats = unstable_cache(fetchStats, ["sih-stats"], {
   tags: ["sih"],
   revalidate: 1800,
 });
+
+// Compact one-line-per-PS text for pasting into an LLM.
+export function toCompactText(s: Stats): string {
+  const head = [
+    `SIH 2026 problem statements (${s.psCount}, updated ${s.updatedAt}).`,
+    `Count = submitted ideas/500 per PS (lower = less competition). Teams of 6, total ideas ${s.totalIdeas}.`,
+    `Format: ID | S=Software H=Hardware | Theme | count/cap | Organization | Title`,
+    ``,
+  ].join("\n");
+  const lines = s.rows.map(
+    (r) =>
+      `${r.id} | ${r.cat === "Hardware" ? "H" : "S"} | ${r.theme} | ${r.count}/${r.cap} | ${r.org} | ${r.title}`
+  );
+  return head + lines.join("\n") + "\n";
+}

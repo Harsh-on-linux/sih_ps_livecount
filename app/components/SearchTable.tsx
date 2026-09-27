@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { PSRow } from "@/lib/sih";
+import LlmExport from "./LlmExport";
 
 export default function SearchTable({ rows }: { rows: PSRow[] }) {
   const [q, setQ] = useState("");
@@ -71,6 +72,9 @@ export default function SearchTable({ rows }: { rows: PSRow[] }) {
           <option value="id-asc">PS number order</option>
         </select>
       </div>
+      <div className="mt-3">
+        <LlmExport rows={filtered} />
+      </div>
 
       <div className="mt-4 overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
         <table className="w-full text-left text-sm">
@@ -86,9 +90,25 @@ export default function SearchTable({ rows }: { rows: PSRow[] }) {
           <tbody>
             {visible.map((r) => (
               <tr key={r.id} className="border-t border-zinc-200 dark:border-zinc-800">
-                <td className="px-3 py-2 font-mono">{r.id}</td>
+                <td className="px-3 py-2 font-mono">
+                  <a
+                    href="https://sih.gov.in/sih2026PS"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-600"
+                  >
+                    {r.id}
+                  </a>
+                </td>
                 <td className="px-3 py-2">
-                  <div className="font-medium">{r.title}</div>
+                  <a
+                    href="https://sih.gov.in/sih2026PS"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium hover:underline"
+                  >
+                    {r.title}
+                  </a>
                   <div className="text-xs text-zinc-500">{r.org} · {r.dept}</div>
                 </td>
                 <td className="px-3 py-2">
