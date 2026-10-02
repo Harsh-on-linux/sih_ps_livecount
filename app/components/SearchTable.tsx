@@ -10,6 +10,7 @@ export default function SearchTable({ rows }: { rows: PSRow[] }) {
   const [dept, setDept] = useState("All");
   const [sort, setSort] = useState("ideas-desc");
   const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const perPage = 20;
 
   const depts = useMemo(
@@ -39,6 +40,25 @@ export default function SearchTable({ rows }: { rows: PSRow[] }) {
   const safePage = Math.min(page, pages);
   const visible = filtered.slice((safePage - 1) * perPage, safePage * perPage);
   const reset = () => setPage(1);
+
+  // ponytail: selection survives filters so picks can span searches; copy uses selected when non-empty
+  const selectedRows = useMemo(() => {
+    if (!selected.size) return [];
+    const out = rows.filter((r) => selected.has(r.id));
+    if (sort === "ideas-desc") out.sort((a, b) => b.count - a.count);
+    else if (sort === "ideas-asc") out.sort((a, b) => a.count - b.count);
+    else if (sort === "id-asc") out.sort((a, b) => a.id.localeCompare(b.id));
+    return out;
+  }, [rows, selected, sort]);
+  const exportRows = selected.size ? selectedRows : filtered;
+  const toggle = (id: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const allVisible = visible.length > 0 && visible.every((r) => selected.has(r.id));
 
   const select =
     "rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900";
@@ -73,13 +93,47 @@ export default function SearchTable({ rows }: { rows: PSRow[] }) {
         </select>
       </div>
       <div className="mt-3">
-        <LlmExport rows={filtered} />
+        <LlmExport rows={exportRows} />
+        {selected.size > 0 ? (
+          <p className="mt-1 text-xs text-zinc-500">
+            {selected.size} selected — copy uses selection only.{" "}
+            <button onClick={() => setSelected(new Set())} className="underline">
+              Clear
+            </button>{" "}
+            ·{" "}
+            <button
+              onClick={() => setSelected(new Set(filtered.map((r) => r.id)))}
+              className="underline"
+            >
+              Select all {filtered.length} filtered
+            </button>
+          </p>
+        ) : (
+          <p className="mt-1 text-xs text-zinc-500">
+            Tip: tick rows to copy only those; otherwise copy uses all {filtered.length} filtered.
+          </p>
+        )}
       </div>
 
       <div className="mt-4 overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
         <table className="w-full text-left text-sm">
           <thead className="bg-zinc-100 dark:bg-zinc-900">
             <tr>
+              <th className="px-3 py-2">
+                <input
+                  type="checkbox"
+                  checked={allVisible}
+                  onChange={() =>
+                    setSelected((prev) => {
+                      const next = new Set(prev);
+                      if (allVisible) visible.forEach((r) => next.delete(r.id));
+                      else visible.forEach((r) => next.add(r.id));
+                      return next;
+                    })
+                  }
+                  aria-label="Select page"
+                />
+              </th>
               <th className="px-3 py-2">PS</th>
               <th className="px-3 py-2">Title</th>
               <th className="px-3 py-2">Category</th>
@@ -90,6 +144,14 @@ export default function SearchTable({ rows }: { rows: PSRow[] }) {
           <tbody>
             {visible.map((r) => (
               <tr key={r.id} className="border-t border-zinc-200 dark:border-zinc-800">
+                <td className="px-3 py-2">
+                  <input
+                    type="checkbox"
+                    checked={selected.has(r.id)}
+                    onChange={() => toggle(r.id)}
+                    aria-label={`Select ${r.id}`}
+                  />
+                </td>
                 <td className="px-3 py-2 font-mono">
                   <a
                     href={`/ps/${r.id}`}

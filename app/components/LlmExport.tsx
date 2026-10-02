@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { PSRow } from "@/lib/sih";
 
 export default function LlmExport({ rows }: { rows: PSRow[] }) {
-  const [msg, setMsg] = useState(`Copy ${rows.length} for LLM`);
+  const [copied, setCopied] = useState(false);
   function text() {
     const head = `SIH 2026 problem statements (${rows.length} selected). Count = submitted ideas/500 per PS (lower = less competition). Teams of 6.\nFormat: ID | S=Software H=Hardware | Theme | count/cap | Organization | Title\n`;
     return (
@@ -21,11 +21,11 @@ export default function LlmExport({ rows }: { rows: PSRow[] }) {
   async function copy() {
     try {
       await navigator.clipboard.writeText(text());
-      setMsg("Copied!");
+      setCopied(true);
     } catch {
-      setMsg("Copy failed");
+      setCopied(false);
     }
-    setTimeout(() => setMsg(`Copy ${rows.length} for LLM`), 2000);
+    setTimeout(() => setCopied(false), 2000);
   }
   function download() {
     const blob = new Blob([text()], { type: "text/plain" });
@@ -40,7 +40,7 @@ export default function LlmExport({ rows }: { rows: PSRow[] }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <button onClick={copy} className={btn}>
-        {msg}
+        {copied ? "Copied!" : `Copy ${rows.length} for LLM`}
       </button>
       <button onClick={download} className={btn}>
         Download .txt
