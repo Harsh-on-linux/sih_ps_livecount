@@ -85,7 +85,7 @@ async function fetchStats(): Promise<Stats> {
       org: $(tds[1]).text().trim(),
       dept: deptTh.closest("tr").find("td").first().text().trim() || $(tds[1]).text().trim(),
       title: $(tds[2]).find("a").first().text().trim(),
-      cat: $(tds[3]).text().trim(),
+      cat: $(tds[3]).text().trim().toLowerCase() === "hardware" ? "Hardware" : "Software",
       id,
       count: +m[1],
       cap: +m[2],

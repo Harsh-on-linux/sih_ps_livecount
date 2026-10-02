@@ -61,7 +61,7 @@ table.find("> tbody > tr").each((_, tr) => {
     title: titleCell.find("a").first().text().trim(),
     org: $(tds[1]).text().trim(),
     dept: detail.dept || $(tds[1]).text().trim(),
-    cat: $(tds[3]).text().trim(),
+    cat: $(tds[3]).text().trim().toLowerCase() === "hardware" ? "Hardware" : "Software",
     theme: tds.length > 6 ? $(tds[6]).text().trim() : "",
     deadline: tds.length > 7 ? $(tds[7]).text().trim() : "",
     descriptionHtml: detail.descriptionHtml || "",
