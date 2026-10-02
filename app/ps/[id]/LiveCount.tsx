@@ -12,7 +12,8 @@ export default function LiveCount({ id, count, cap }: { id: string; count: numbe
     fetch("/api/counts", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((j: LiveCounts | null) => {
-        if (!dead && j?.counts?.[id]) setLive(j.counts[id]);
+        // ponytail: snapshot fallback has live:false — overlay numbers but no badge
+        if (!dead && j?.counts?.[id] && j.live !== false) setLive(j.counts[id]);
       })
       .catch(() => {});
     return () => {

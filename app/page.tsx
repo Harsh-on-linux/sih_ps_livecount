@@ -25,7 +25,7 @@ export default async function Home() {
       }))
       .sort((a, b) => b.count - a.count);
     updatedAt = lc.updatedAt;
-    live = true;
+    live = lc.live;
   } catch {
     // SIH unreachable: render repo snapshot.
   }

@@ -1,5 +1,6 @@
 import * as cheerio from "cheerio";
 import { unstable_cache } from "next/cache";
+import psData from "@/data/ps.json";
 
 export type PSRow = {
   org: string;
@@ -28,6 +29,7 @@ export type PSDetail = PSRow & {
 export type LiveCounts = {
   updatedAt: string;
   counts: Record<string, { count: number; cap: number }>;
+  live: boolean; // false when served from the repo snapshot (SIH unreachable/blocked)
 };
 
 export type Stats = {
@@ -53,14 +55,19 @@ async function fetchSource(): Promise<string> {
         },
         signal: AbortSignal.timeout(20000),
       });
+      // ponytail: SIH 403s cloud IPs (Vercel) — retrying won't help, fail fast
+      if (res.status === 403 || res.status === 404) throw new Error(`SIH blocked here: ${res.status}`);
       if (!res.ok) throw new Error(`SIH fetch failed: ${res.status}`);
       return await res.text();
     } catch (e) {
       lastErr = e;
-      console.error(`SIH fetch attempt ${i + 1} failed:`, e);
+      if (e instanceof Error && e.message.startsWith("SIH blocked here")) break;
+      console.warn(`SIH fetch attempt ${i + 1} failed: ${e instanceof Error ? e.message : e}`);
       await new Promise((r) => setTimeout(r, 2000 * (i + 1)));
     }
   }
+  if (lastErr instanceof Error && lastErr.message.startsWith("SIH blocked here"))
+    console.warn(`${lastErr.message} — serving repo snapshot`);
   throw lastErr instanceof Error ? lastErr : new Error("SIH fetch failed");
 }
 
@@ -129,13 +136,36 @@ async function fetchLiveCounts(): Promise<LiveCounts> {
     counts[id] = { count: +m[1], cap: +m[2] };
   });
   if (!Object.keys(counts).length) throw new Error("SIH counts parse returned 0 rows");
-  return { updatedAt: new Date().toISOString(), counts };
+  return { updatedAt: new Date().toISOString(), counts, live: true };
 }
 
 export const getLiveCounts = unstable_cache(fetchLiveCounts, ["sih-counts"], {
   tags: ["sih"],
   revalidate: 1800,
 });
+
+// Repo snapshot fallback for when SIH is unreachable/blocked (e.g. 403 from
+// cloud IPs). Keeps API routes + builds working with slightly stale numbers.
+const snapRows = psData.rows as PSDetail[];
+
+export function snapshotCounts(): LiveCounts {
+  const counts: LiveCounts["counts"] = {};
+  for (const r of snapRows) counts[r.id] = { count: r.count, cap: r.cap };
+  return { updatedAt: psData.fetchedAt, counts, live: false };
+}
+
+export function snapshotStats(): Stats {
+  const rows: PSRow[] = [...snapRows].sort((a, b) => b.count - a.count);
+  const totalIdeas = rows.reduce((a, r) => a + r.count, 0);
+  return {
+    totalIdeas,
+    totalCapacity: rows.reduce((a, r) => a + r.cap, 0),
+    totalApplicants: totalIdeas * 6,
+    psCount: rows.length,
+    updatedAt: psData.fetchedAt,
+    rows,
+  };
+}
 
 // Compact one-line-per-PS text for pasting into an LLM.
 export function toCompactText(s: Stats): string {

@@ -1,4 +1,4 @@
-import { getStats } from "@/lib/sih";
+import { getStats, snapshotStats } from "@/lib/sih";
 
 export const dynamic = "force-static";
 export const revalidate = 1800; // 30min
@@ -7,10 +7,7 @@ export async function GET() {
   try {
     const stats = await getStats();
     return Response.json(stats);
-  } catch (e) {
-    return Response.json(
-      { error: e instanceof Error ? e.message : "fetch failed" },
-      { status: 502 }
-    );
+  } catch {
+    return Response.json(snapshotStats()); // SIH blocked/unreachable: repo snapshot
   }
 }
